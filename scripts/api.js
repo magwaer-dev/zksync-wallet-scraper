@@ -18,12 +18,12 @@ async function makeApiCall(endpoint, params, userAgent) {
     },
   });
 
-  console.log("API Response:", response.body);
+  const result = JSON.parse(response.body);
 
-  if ((response.body = "1")) {
-    return response.result;
+  if ((result.body = "1")) {
+    return result.result;
   } else {
-    throw new Error("Api error: ", response.message);
+    throw new Error("Api error: ", result.message);
   }
 }
 
