@@ -7,7 +7,6 @@ const ACTION_TRANSACTIONS = "txlist";
 const ACTION_CONTRACT_SOURCE_CODE = "getsourcecode";
 
 async function makeApiCall(endpoint, params, userAgent) {
-  // const result = {};
   const response = await gotScraping.get(API_URL, {
     searchParams: {
       action: endpoint,
@@ -24,7 +23,7 @@ async function makeApiCall(endpoint, params, userAgent) {
   if ((response.body = "1")) {
     return response.result;
   } else {
-    throw new Error("Api error: ", result.message);
+    throw new Error("Api error: ", response.message);
   }
 }
 
