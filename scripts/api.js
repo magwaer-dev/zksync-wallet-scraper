@@ -85,8 +85,10 @@ async function getTransactions(walletAddress) {
   }
 }
 
-async function getUniqueAddresses() {
+async function getUniqueAddressesWithTimestamp() {
   const transactions = await getTransactions(walletAddress);
+
+  let uniqueAddressesWithTimestamp = new Map();
 
   if (transactions !== null) {
     let uniqueAddresses = new Set();
@@ -95,11 +97,33 @@ async function getUniqueAddresses() {
       uniqueAddresses.add(transaction.to);
       uniqueAddresses.add(transaction.from);
     });
-    uniqueAddresses = new Set(
-      [...uniqueAddresses].filter((address) => address !== walletAddress)
+
+    uniqueAddresses.delete(walletAddress);
+
+    // Iterate through each unique address and find the corresponding timeStamp
+    for (const address of uniqueAddresses) {
+      const timeStamp = findLastTransactionTimestamp(address, transactions);
+      uniqueAddressesWithTimestamp.set(address, timeStamp);
+    }
+
+    return uniqueAddressesWithTimestamp;
+  }
+}
+
+// Function to find the last transaction timestamp for a specific address
+function findLastTransactionTimestamp(address, transactions) {
+  const transactionsForAddress = transactions.filter(
+    (transaction) => transaction.to === address || transaction.from === address
+  );
+
+  if (transactionsForAddress.length > 0) {
+    const sortedTransactions = transactionsForAddress.sort(
+      (a, b) => b.timeStamp - a.timeStamp
     );
 
-    return uniqueAddresses;
+    return new Date(sortedTransactions[0].timeStamp * 1000); // Convert to Date type
+  } else {
+    return null;
   }
 }
 
@@ -112,7 +136,9 @@ async function timestampForLastTransaction(walletAddress) {
         (a, b) => b.blockNumber - a.blockNumber
       );
 
-      const lastTransactionTimestamp = sortedTransactions[0].timeStamp;
+      const lastTransactionTimestamp = new Date(
+        sortedTransactions[0].timeStamp * 1000
+      ); // Convert to Date type
 
       return lastTransactionTimestamp;
     } else {
@@ -135,18 +161,38 @@ async function main() {
 
     const transactionCount = await getTransactions(walletAddress);
 
-    const uniqueAddresses = await getUniqueAddresses();
+    const uniqueAddressesWithTimestamp =
+      await getUniqueAddressesWithTimestamp();
 
-    const timestamp = await timestampForLastTransaction(walletAddress);
+    // Sort unique addresses and their timestamps separately
+    const sortedUniqueAddresses = Array.from(
+      uniqueAddressesWithTimestamp.keys()
+    ).sort();
+    const sortedTimestamps = Array.from(
+      uniqueAddressesWithTimestamp.values()
+    ).sort((a, b) => b - a);
+
+    const interactions = [];
+
+    // Populate interactions array with sorted unique addresses and their timestamps
+    for (const address of sortedUniqueAddresses) {
+      interactions.push({
+        address: address,
+        lastTxAt: uniqueAddressesWithTimestamp.get(address),
+      });
+    }
+
+    const lastTimestamp = await timestampForLastTransaction(walletAddress);
 
     const walletStats = {
       walletAddress: walletAddress,
       walletBalance: balanceInEth,
-      transactionCount: transactionCount.length,
-      uniqueAddressesCount: [...uniqueAddresses].length,
-      uniqueAddresses: uniqueAddresses,
-      timestamp: timestamp,
+      totalTxCount: transactionCount.length,
+      totalUniqueAddressesCount: sortedUniqueAddresses.length,
+      interactions: interactions,
+      lastTxAt: lastTimestamp,
     };
+
     console.log("Wallet Stats:", walletStats);
   } catch (error) {
     console.error("Error:", error.message);
