@@ -4,9 +4,15 @@ const baseApiUrl = "https://block-explorer-api.mainnet.zksync.io/api";
 
 const walletAddress = "0x4F471D378B84422A971846e85bE3792b7f0f63EA";
 
+const CONTRACT_TYPE_UNKNOWN = "unknown contract";
+const CONTRACT_TYPE_WALLET = "wallet";
+const CONTRACT_TYPE_CONTRACT = "contract";
+
 const txListApiEndpoint = "module=account&action=txlist";
 const balanceApiEndpoint = "module=account&action=balance";
 const contractApiEndpoint = "module=contract&action=getsourcecode";
+const getContractCreationApiEndpoint =
+  "module=contract&action=getcontractcreation"; //if it is this api, params is contractaddresses
 
 function weiToEth(wei) {
   return wei / 1e18;
@@ -85,10 +91,8 @@ async function getTransactions(walletAddress) {
   }
 }
 
-async function getUniqueAddressesWithTimestamp() {
+async function getUniqueAddresses() {
   const transactions = await getTransactions(walletAddress);
-
-  let uniqueAddressesWithTimestamp = new Map();
 
   if (transactions !== null) {
     let uniqueAddresses = new Set();
@@ -100,13 +104,26 @@ async function getUniqueAddressesWithTimestamp() {
 
     uniqueAddresses.delete(walletAddress);
 
-    // Iterate through each unique address and find the corresponding timeStamp
+    return uniqueAddresses;
+  }
+}
+
+async function uniqueAddressesTimestamp() {
+  try {
+    const uniqueAddresses = await getUniqueAddresses();
+    const transactions = await getTransactions(walletAddress);
+
+    let timestampAddress = new Map();
+
     for (const address of uniqueAddresses) {
       const timeStamp = findLastTransactionTimestamp(address, transactions);
-      uniqueAddressesWithTimestamp.set(address, timeStamp);
+      timestampAddress.set(address, timeStamp);
     }
 
-    return uniqueAddressesWithTimestamp;
+    return timestampAddress;
+  } catch (error) {
+    console.error("Error in uniqueAddressesTimestamp function:", error.message);
+    return null;
   }
 }
 
@@ -127,7 +144,7 @@ function findLastTransactionTimestamp(address, transactions) {
   }
 }
 
-async function timestampForLastTransaction(walletAddress) {
+async function lastTxTimestamp(walletAddress) {
   try {
     const transactions = await getTransactions(walletAddress);
 
@@ -154,6 +171,32 @@ async function timestampForLastTransaction(walletAddress) {
   }
 }
 
+
+async function getWalletType(address) {
+  const getContractCreationParams = { contractaddresses: address };
+  const contractSourceCodeParams = { address: address };
+  const apiUrl = buildApiUrl(contractApiEndpoint, contractSourceCodeParams);
+
+  const response = await makeApiRequest(apiUrl);
+  for (const contractInfo of response) {
+    if (contractInfo.ContractName == "") {
+      const creationApiUrl = buildApiUrl(
+        getContractCreationApiEndpoint,
+        getContractCreationParams
+      );
+      const creationResponse = await makeApiRequest(creationApiUrl);
+      if (creationResponse !== null) {
+        return CONTRACT_TYPE_UNKNOWN;
+      } else {
+        return CONTRACT_TYPE_WALLET;
+      }
+    } else {
+      return CONTRACT_TYPE_CONTRACT;
+    }
+  }
+  return null;
+}
+
 async function main() {
   try {
     const balanceParams = { address: walletAddress };
@@ -161,34 +204,30 @@ async function main() {
 
     const transactionCount = await getTransactions(walletAddress);
 
-    const uniqueAddressesWithTimestamp =
-      await getUniqueAddressesWithTimestamp();
+    const uniqueAddresses = await getUniqueAddresses();
 
-    // Sort unique addresses and their timestamps separately
-    const sortedUniqueAddresses = Array.from(
-      uniqueAddressesWithTimestamp.keys()
-    ).sort();
-    const sortedTimestamps = Array.from(
-      uniqueAddressesWithTimestamp.values()
-    ).sort((a, b) => b - a);
+    const AddressesWithTimestamp = await uniqueAddressesTimestamp();
 
     const interactions = [];
 
     // Populate interactions array with sorted unique addresses and their timestamps
-    for (const address of sortedUniqueAddresses) {
+    for (const [address, lastTxAt] of AddressesWithTimestamp) {
+      const type = await getWalletType(address);
       interactions.push({
         address: address,
-        lastTxAt: uniqueAddressesWithTimestamp.get(address),
+        lastTxAt: lastTxAt,
+        type: type,
+        // contractName: contractName,
       });
     }
 
-    const lastTimestamp = await timestampForLastTransaction(walletAddress);
+    const lastTimestamp = await lastTxTimestamp(walletAddress);
 
     const walletStats = {
       walletAddress: walletAddress,
       walletBalance: balanceInEth,
       totalTxCount: transactionCount.length,
-      totalUniqueAddressesCount: sortedUniqueAddresses.length,
+      totalUniqueAddressesCount: uniqueAddresses.size,
       interactions: interactions,
       lastTxAt: lastTimestamp,
     };
