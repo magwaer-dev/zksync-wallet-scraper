@@ -1,13 +1,16 @@
 const gotScraping = require("got-scraping");
 
+const { walletBalance } = require("./walletStats/walletBalance.js");
+const { getTransactions } = require("./walletStats/totalTxCount.js");
+
 const {
-  walletBalance,
-  getTransactions,
   getUniqueAddresses,
+} = require("./walletStats/totalUniqueAddressesCount.js");
+const {
   uniqueAddressesTimestamp,
   lastTxTimestamp,
-  getWalletType,
-} = require("./apiUtils.js");
+} = require("./walletStats/transactionsTimestamp.js");
+const { getWalletType } = require("./walletStats/walletType.js");
 
 const { walletAddress } = require("./constants.js");
 

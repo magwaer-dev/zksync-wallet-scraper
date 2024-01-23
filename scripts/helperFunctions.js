@@ -1,5 +1,6 @@
 const { baseApiUrl } = require("./constants");
 
+
 function buildApiUrl(apiEndpoint, params) {
   return `${baseApiUrl}?${apiEndpoint}&${new URLSearchParams(params)}`;
 }
