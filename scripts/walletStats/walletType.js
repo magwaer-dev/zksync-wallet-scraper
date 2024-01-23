@@ -14,7 +14,7 @@ async function getWalletType(address) {
 
   if (contractInfo.ContractName === "") {
     const isContractCreation = await checkContractCreation(address);
-    return isContractCreation ? CONTRACT_TYPE_UNKNOWN : CONTRACT_TYPE_WALLET;
+    return isContractCreation ? CONTRACT_TYPE_CONTRACT : CONTRACT_TYPE_WALLET;
   } else {
     return CONTRACT_TYPE_CONTRACT;
   }

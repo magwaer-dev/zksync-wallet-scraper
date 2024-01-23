@@ -11,8 +11,9 @@ const {
   lastTxTimestamp,
 } = require("./walletStats/transactionsTimestamp.js");
 const { getWalletType } = require("./walletStats/walletType.js");
+const { getContractName } = require("./walletStats/contractName.js");
 
-const { walletAddress } = require("./constants.js");
+const { walletAddress, CONTRACT_TYPE_WALLET } = require("./constants.js");
 
 async function main() {
   try {
@@ -28,12 +29,21 @@ async function main() {
 
     for (const [address, lastTxAt] of AddressesWithTimestamp) {
       const type = await getWalletType(address);
-      interactions.push({
+      const contractName =
+        type !== CONTRACT_TYPE_WALLET ? await getContractName(address) : null;
+
+      const interaction = {
         address: address,
         lastTxAt: lastTxAt,
         type: type,
-        // contractName: contractName,
-      });
+        contractName: contractName,
+      };
+
+      if (type === CONTRACT_TYPE_WALLET) {
+        delete interaction.contractName;
+      }
+
+      interactions.push(interaction);
     }
 
     const lastTimestamp = await lastTxTimestamp(walletAddress);

@@ -1,6 +1,5 @@
 const gotScraping = require("got-scraping");
 
-
 async function makeApiRequest(apiUrl) {
   try {
     const response = await gotScraping.got(apiUrl, { responseType: "json" });
