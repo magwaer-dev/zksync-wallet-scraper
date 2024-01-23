@@ -1,26 +1,17 @@
 const gotScraping = require("got-scraping");
 
-const baseApiUrl = "https://block-explorer-api.mainnet.zksync.io/api";
+const { buildApiUrl, weiToEth, giveParams } = require("./helperFunctions");
 
-const walletAddress = "0x4F471D378B84422A971846e85bE3792b7f0f63EA";
-
-const CONTRACT_TYPE_UNKNOWN = "unknown contract";
-const CONTRACT_TYPE_WALLET = "wallet";
-const CONTRACT_TYPE_CONTRACT = "contract";
-
-const txListApiEndpoint = "module=account&action=txlist";
-const balanceApiEndpoint = "module=account&action=balance";
-const contractApiEndpoint = "module=contract&action=getsourcecode";
-const getContractCreationApiEndpoint =
-  "module=contract&action=getcontractcreation"; //if it is this api, params is contractaddresses
-
-function weiToEth(wei) {
-  return wei / 1e18;
-}
-
-function buildApiUrl(apiEndpoint, params) {
-  return `${baseApiUrl}?${apiEndpoint}&${new URLSearchParams(params)}`;
-}
+const {
+  walletAddress,
+  CONTRACT_TYPE_UNKNOWN,
+  CONTRACT_TYPE_WALLET,
+  CONTRACT_TYPE_CONTRACT,
+  txListApiEndpoint,
+  balanceApiEndpoint,
+  contractApiEndpoint,
+  getContractCreationApiEndpoint,
+} = require("./constants.js");
 
 async function makeApiRequest(apiUrl) {
   try {
@@ -38,13 +29,14 @@ async function makeApiRequest(apiUrl) {
   }
 }
 
-async function walletBalance(apiEndpoint, params = {}) {
+async function walletBalance(walletAddress) {
   try {
-    const apiUrl = buildApiUrl(apiEndpoint, params);
-    const dataInWei = await makeApiRequest(apiUrl);
+    const params = giveParams("address", walletAddress);
+    const apiUrl = buildApiUrl(balanceApiEndpoint, params);
+    const response = await makeApiRequest(apiUrl);
 
-    if (dataInWei !== null) {
-      const dataInEth = weiToEth(dataInWei);
+    if (response !== null) {
+      const dataInEth = weiToEth(response);
       return dataInEth;
     } else {
       return null;
@@ -62,8 +54,8 @@ async function getTransactions(walletAddress) {
 
   try {
     while (true) {
-      const txListParams = { address: walletAddress, page, offset: pageSize };
-      const apiUrl = buildApiUrl(txListApiEndpoint, txListParams);
+      const params = giveParams("address", walletAddress, page, pageSize);
+      const apiUrl = buildApiUrl(txListApiEndpoint, params);
       const response = await makeApiRequest(apiUrl);
 
       if (response !== null && Array.isArray(response)) {
@@ -127,7 +119,6 @@ async function uniqueAddressesTimestamp() {
   }
 }
 
-// Function to find the last transaction timestamp for a specific address
 function findLastTransactionTimestamp(address, transactions) {
   const transactionsForAddress = transactions.filter(
     (transaction) => transaction.to === address || transaction.from === address
@@ -171,71 +162,49 @@ async function lastTxTimestamp(walletAddress) {
   }
 }
 
-
 async function getWalletType(address) {
-  const getContractCreationParams = { contractaddresses: address };
-  const contractSourceCodeParams = { address: address };
-  const apiUrl = buildApiUrl(contractApiEndpoint, contractSourceCodeParams);
+  const contractInfo = await getContractInfo(address);
 
-  const response = await makeApiRequest(apiUrl);
-  for (const contractInfo of response) {
-    if (contractInfo.ContractName == "") {
-      const creationApiUrl = buildApiUrl(
-        getContractCreationApiEndpoint,
-        getContractCreationParams
-      );
-      const creationResponse = await makeApiRequest(creationApiUrl);
-      if (creationResponse !== null) {
-        return CONTRACT_TYPE_UNKNOWN;
-      } else {
-        return CONTRACT_TYPE_WALLET;
-      }
-    } else {
-      return CONTRACT_TYPE_CONTRACT;
-    }
+  if (contractInfo.ContractName === "") {
+    const isContractCreation = await checkContractCreation(address);
+    return isContractCreation ? CONTRACT_TYPE_UNKNOWN : CONTRACT_TYPE_WALLET;
+  } else {
+    return CONTRACT_TYPE_CONTRACT;
   }
+}
+
+async function getContractInfo(address) {
+  const contractSourceCodeParams = giveParams("address", address);
+  const apiUrl = buildApiUrl(contractApiEndpoint, contractSourceCodeParams);
+  const response = await makeApiRequest(apiUrl);
+
+  if (response.length > 0) {
+    return response[0];
+  }
+
   return null;
 }
 
-async function main() {
-  try {
-    const balanceParams = { address: walletAddress };
-    const balanceInEth = await walletBalance(balanceApiEndpoint, balanceParams);
+async function checkContractCreation(address) {
+  const getContractCreationParams = giveParams("contractaddresses", address);
+  const creationApiUrl = buildApiUrl(
+    getContractCreationApiEndpoint,
+    getContractCreationParams
+  );
+  const creationResponse = await makeApiRequest(creationApiUrl);
 
-    const transactionCount = await getTransactions(walletAddress);
-
-    const uniqueAddresses = await getUniqueAddresses();
-
-    const AddressesWithTimestamp = await uniqueAddressesTimestamp();
-
-    const interactions = [];
-
-    // Populate interactions array with sorted unique addresses and their timestamps
-    for (const [address, lastTxAt] of AddressesWithTimestamp) {
-      const type = await getWalletType(address);
-      interactions.push({
-        address: address,
-        lastTxAt: lastTxAt,
-        type: type,
-        // contractName: contractName,
-      });
-    }
-
-    const lastTimestamp = await lastTxTimestamp(walletAddress);
-
-    const walletStats = {
-      walletAddress: walletAddress,
-      walletBalance: balanceInEth,
-      totalTxCount: transactionCount.length,
-      totalUniqueAddressesCount: uniqueAddresses.size,
-      interactions: interactions,
-      lastTxAt: lastTimestamp,
-    };
-
-    console.log("Wallet Stats:", walletStats);
-  } catch (error) {
-    console.error("Error:", error.message);
-  }
+  return creationResponse !== null;
 }
 
-main();
+module.exports = {
+  makeApiRequest,
+  walletBalance,
+  getTransactions,
+  getUniqueAddresses,
+  uniqueAddressesTimestamp,
+  findLastTransactionTimestamp,
+  lastTxTimestamp,
+  getWalletType,
+  getContractInfo,
+  checkContractCreation,
+};
