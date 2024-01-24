@@ -5,9 +5,13 @@ async function makeApiRequest(apiUrl) {
     const response = await gotScraping.got(apiUrl, { responseType: "json" });
 
     if (response.body.status === "1") {
+      // console.log("API Response:", response.body.result);y
       return response.body.result;
     } else {
-      console.error("Error in API response:", response.body.message);
+      const errorMessage = response.body.message || "";
+      if (!errorMessage.includes("No data found")) {
+        console.error("Error in API response:", errorMessage);
+      }
       return null;
     }
   } catch (error) {

@@ -30,7 +30,7 @@ function findLastTransactionTimestamp(address, transactions) {
       (a, b) => b.timeStamp - a.timeStamp
     );
 
-    return new Date(sortedTransactions[0].timeStamp * 1000); // Convert to Date type
+    return new Date(sortedTransactions[0].timeStamp * 1000);
   } else {
     return null;
   }
@@ -47,7 +47,7 @@ async function lastTxTimestamp(walletAddress) {
 
       const lastTransactionTimestamp = new Date(
         sortedTransactions[0].timeStamp * 1000
-      ); // Convert to Date type
+      ); 
 
       return lastTransactionTimestamp;
     } else {
