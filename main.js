@@ -1,19 +1,19 @@
 const gotScraping = require("got-scraping");
 
-const { walletBalance } = require("./wallet-stats/walletBalance.js");
-const { getTransactions } = require("./wallet-stats/totalTxCount.js");
+const { walletBalance } = require("./scripts/wallet-stats/walletBalance.js");
+const { getTransactions } = require("./scripts/wallet-stats/totalTxCount.js");
 
 const {
   getUniqueAddresses,
-} = require("./wallet-stats/totalUniqueAddressesCount.js");
+} = require("./scripts/wallet-stats/totalUniqueAddressesCount.js");
 const {
   uniqueAddressesTimestamp,
   lastTxTimestamp,
-} = require("./wallet-stats/transactionsTimestamp.js");
-const { getWalletType } = require("./wallet-stats/walletType.js");
-const { getContractName } = require("./wallet-stats/contractName.js");
+} = require("./scripts/wallet-stats/transactionsTimestamp.js");
+const { getWalletType } = require("./scripts/wallet-stats/walletType.js");
+const { getContractName } = require("./scripts/wallet-stats/contractName.js");
 
-const { walletAddress, CONTRACT_TYPE_WALLET } = require("./constants.js");
+const { walletAddress, CONTRACT_TYPE_WALLET } = require("./scripts/constants.js");
 
 async function main() {
   try {
