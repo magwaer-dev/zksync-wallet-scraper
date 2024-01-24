@@ -1,6 +1,6 @@
 const { txListApiEndpoint } = require("../constants.js");
-const { buildApiUrl, giveParams } = require("../helperFunctions");
-const { makeApiRequest } = require("../apiUtils.js");
+const { buildApiUrl, giveParams } = require("../helper-functions");
+const { makeApiRequest } = require("../api-utils.js");
 
 async function getTransactions(walletAddress) {
   const pageSize = 10; // Number of transactions per page

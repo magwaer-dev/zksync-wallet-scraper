@@ -3,8 +3,8 @@ const {
   CONTRACT_TYPE_UNKNOWN,
 } = require("../constants.js");
 
-const { buildApiUrl, giveParams } = require("../helperFunctions.js");
-const { makeApiRequest } = require("../apiUtils.js");
+const { buildApiUrl, giveParams } = require("../helper-functions.js");
+const { makeApiRequest } = require("../api-utils.js");
 
 async function getContractName(address) {
   const contractSourceCodeParams = giveParams("address", address);

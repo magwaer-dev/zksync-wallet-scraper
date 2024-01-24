@@ -6,8 +6,8 @@ const {
   getContractCreationApiEndpoint,
 } = require("../constants.js");
 
-const { buildApiUrl, giveParams } = require("../helperFunctions.js");
-const { makeApiRequest } = require("../apiUtils.js");
+const { buildApiUrl, giveParams } = require("../helper-functions.js");
+const { makeApiRequest } = require("../api-utils.js");
 
 async function getWalletType(address) {
   const contractInfo = await getContractInfo(address);

@@ -1,17 +1,17 @@
 const gotScraping = require("got-scraping");
 
-const { walletBalance } = require("./walletStats/walletBalance.js");
-const { getTransactions } = require("./walletStats/totalTxCount.js");
+const { walletBalance } = require("./wallet-stats/walletBalance.js");
+const { getTransactions } = require("./wallet-stats/totalTxCount.js");
 
 const {
   getUniqueAddresses,
-} = require("./walletStats/totalUniqueAddressesCount.js");
+} = require("./wallet-stats/totalUniqueAddressesCount.js");
 const {
   uniqueAddressesTimestamp,
   lastTxTimestamp,
-} = require("./walletStats/transactionsTimestamp.js");
-const { getWalletType } = require("./walletStats/walletType.js");
-const { getContractName } = require("./walletStats/contractName.js");
+} = require("./wallet-stats/transactionsTimestamp.js");
+const { getWalletType } = require("./wallet-stats/walletType.js");
+const { getContractName } = require("./wallet-stats/contractName.js");
 
 const { walletAddress, CONTRACT_TYPE_WALLET } = require("./constants.js");
 

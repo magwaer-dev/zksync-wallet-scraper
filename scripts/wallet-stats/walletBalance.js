@@ -1,8 +1,8 @@
 const { balanceApiEndpoint } = require("../constants.js");
 
-const { buildApiUrl, weiToEth, giveParams } = require("../helperFunctions");
+const { buildApiUrl, weiToEth, giveParams } = require("../helper-functions");
 
-const { makeApiRequest } = require("../apiUtils.js");
+const { makeApiRequest } = require("../api-utils.js");
 
 async function walletBalance(walletAddress) {
   try {
